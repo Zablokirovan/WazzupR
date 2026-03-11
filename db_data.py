@@ -13,5 +13,17 @@ db_client = psycopg2.connect(
     port=os.getenv("DB_PORT")
 )
 
+data = '2026-01-01'
+shema = 'MessagingCore'
+
 def get_number_info():
-    pass
+    query = f"""
+    select distinct civ.phone_num_clear 
+    from "{shema}".contact_info_view civ 
+    where civ.date_create <= '{data}'
+     and civ.phone_num_clear like '77%';
+    """
+    with db_client.cursor() as cur:
+        cur.execute(query)
+        result = cur.fetchall()
+        return result

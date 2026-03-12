@@ -29,25 +29,32 @@ def get_number_info():
         return result
 
 
-def insert_data_for_messages(info_mess, resp_code):
+def insert_data_for_messages(info_mess, resp_code, number):
     """
     Function for adding information about transactions
      and contacts to the database
     """
-    info = [(info_mess["messageId"],info_mess["chatId"], resp_code)]
+    if resp_code ==201:
+        info = [(info_mess["messageId"],info_mess["chatId"], resp_code, None, None)]
+    else:
+        info = [(info_mess["requestId"], number, resp_code, None, info_mess["error"])]
 
     with db_client.cursor() as cur:
         cur.executemany("""
                 INSERT INTO "MessagingCore".result_response_messagess (
                     messages_id,
                     phone_num,
-                    response_code
+                    response_code,
+                    status,
+                    error
                 )
-                VALUES (%s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s)
                 ON CONFLICT (messages_id)
                 DO UPDATE SET
                     phone_num = EXCLUDED.phone_num,
-                    response_code = EXCLUDED.response_code
+                    response_code = EXCLUDED.response_code,
+                    status = EXCLUDED.status,
+                    error = EXCLUDED.error
             """, info)
 
     db_client.commit()

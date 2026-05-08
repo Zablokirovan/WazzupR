@@ -1,0 +1,51 @@
+---
+description: Инструкции и методология работы для этого проекта
+alwaysApply: true
+---
+
+# Инструкции и методология работы
+
+Данный проект нужен для рассылки рекламных сообщений клиентам в WhatsApp
+
+# Методолгия
+    Точка старта проекта main.py функция main()
+
+    file_n= 'employee.csv' список номеров сотрудников
+    df = pd.read_csv(file_n) - обработка
+    phones = df["number"].tolist()- обработка
+    wazzup.sending_messages_for_employee(phones) - отправка соощений сотрудникам
+
+    num_list = db_data.get_number_info() - получение номер телефона для клиентов
+    wazzup.sending_messages(num_list) - отправка сообщений клиентам
+
+
+# Интрукция
+Ты не имеешь право изменять код без моего согласия
+Ты не имешь право делать запросы в базу без моего согласия
+Любые запросы в базу после моего согласия и только `SELECT`
+Любые доработки в коде ты согласуешь со мной и добовляешь когда я тебе напишу `Вноси изменения`
+ТОЛЬКО СЛОВА `Вноси изменения` ДАЮТ ТЕБЕ ДОСТУП ВНОСИТЬ ИЗМЕНЕНИЯ
+
+# Cтруктура таблиц проекта (Схема MessagingCore)
+
+# Таблица Rassylka_Reklamy_wazzup
+    Данная таблица хранит в себе информацию о заказах из 1С пополняется кадый день (Пока не пополняется)
+
+# DLL Таблицы
+    CREATE TABLE "MessagingCore"."Rassylka_Reklamy_wazzup" (
+	"Data" date NOT NULL,
+	"MagazinSalon" varchar(100) NOT NULL,
+	"NomerTelefona" varchar(11) NOT NULL,
+	"ParametrDataNachala" date NOT NULL,
+	"ParametrDataOkonchaniya" date NOT NULL
+);
+CREATE INDEX "Rassylka_Reklamy_wazzup_Segment_idx" ON "MessagingCore"."Rassylka_Reklamy_wazzup" USING btree ("ParametrDataNachala", "ParametrDataOkonchaniya");
+
+
+# Описание колонок 
+"Data" - дата выгрузки
+"MagazinSalon" - Хранит тип магазина (Название салона, Название интернет магазина, и прои)
+NomerTelefona - Номер телефона клиента  есть пустые поля, поля не пустые если MagazinSalon является Магазином
+ParametrDataNachala - Поля из 1с
+ParametrDataOkonchaniya - Поля из 1с
+

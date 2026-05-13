@@ -6,6 +6,9 @@ import db_data
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def chunks(num_list, size):
@@ -37,7 +40,7 @@ def _create_session():
     return session
 
 
-def _send_one_message(session, url, headers, number):
+def _send_one_message(session, url, headers, number, campaign_id):
     data = {
         "channelId": "aeeb7d9e-0631-4ef4-a294-82dee4178089",
         "chatId": f"{number}",
@@ -59,7 +62,7 @@ def _send_one_message(session, url, headers, number):
                 "response_text": response.text
             }
 
-        db_data.insert_data_for_messages(response_json, response.status_code, number)
+        db_data.insert_data_for_messages(campaign_id, response_json, response.status_code, number)
 
         return {
             "number": number,
@@ -74,7 +77,7 @@ def _send_one_message(session, url, headers, number):
             "description": str(e)
         }
 
-        db_data.insert_data_for_messages(error_data, 0, number)
+        db_data.insert_data_for_messages(campaign_id, error_data, 0, number)
 
         return {
             "number": number,
@@ -84,7 +87,7 @@ def _send_one_message(session, url, headers, number):
         }
 
 
-def sending_messages(num_list):
+def sending_messages(num_list, campaign_id):
     url = "https://api.wazzup24.com/v3/message/"
 
     headers = {
@@ -92,7 +95,7 @@ def sending_messages(num_list):
         "Content-Type": "application/json"
     }
 
-    numbers = [row[0] for row in num_list if row and row[0]]
+    numbers = [(+77752123690)]#[row[0] for row in num_list if row and row[0]]
 
     session = _create_session()
 
@@ -103,7 +106,7 @@ def sending_messages(num_list):
         for batch in chunks(numbers, size=batch_size):
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [
-                    executor.submit(_send_one_message, session, url, headers, number)
+                    executor.submit(_send_one_message, session, url, headers, number, campaign_id)
                     for number in batch
                 ]
 

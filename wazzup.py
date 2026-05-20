@@ -40,14 +40,14 @@ def _create_session():
     return session
 
 
-def _send_one_message(session, url, headers, number, campaign_id):
+def _send_one_message(session, url, headers, number, campaign_id, template_id, foto):
     data = {
         "channelId": "aeeb7d9e-0631-4ef4-a294-82dee4178089",
         "chatId": f"{number}",
         "chatType": "whatsapp",
-        "templateId": "984a946b-11d1-47de-b1ac-6f29d89520ca",
+        "templateId": f"{template_id}",
         "templateValues": [
-            "https://em-go.kz/15.jpg"
+            f"{foto}"
         ]
     }
 
@@ -87,7 +87,7 @@ def _send_one_message(session, url, headers, number, campaign_id):
         }
 
 
-def sending_messages(num_list, campaign_id):
+def sending_messages(num_list, campaign_id, city ):
     url = "https://api.wazzup24.com/v3/message/"
 
     headers = {
@@ -101,12 +101,31 @@ def sending_messages(num_list, campaign_id):
 
     max_workers = 10
     batch_size = 300
-
+    query_city = {
+        'ALA':{
+            "template_id":"435cc795-1f52-4d23-bd50-f613fe9e9a25",
+            "foto":"https://em-go.kz/ala15.jpg"},
+        "SHMK":{
+            "template_id":"d418f0b7-7ec3-466f-8c95-9f17da387400",
+            "foto":"https://em-go.kz/shmk15.jpg"},
+        "TRZ":{
+            "template_id":"f566a226-05bc-46e5-b5d6-2e6fa20991ee",
+            "foto":"https://em-go.kz/trz15.jpg"},
+        "TKR": {
+            "template_id":"84a806ec-7971-43ee-a279-9ad6bf814b55",
+            "foto":"https://em-go.kz/tkr15.jpg"},
+        "USK":{
+            "template_id":"bfc94ac6-be8c-492e-94d8-72cf405d599c",
+            "foto":"https://em-go.kz/usk15.jpg"}
+    }
+    info = query_city.get(city)
+    template_id = info["template_id"]
+    foto = info["foto"]
     try:
         for batch in chunks(numbers, size=batch_size):
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [
-                    executor.submit(_send_one_message, session, url, headers, number, campaign_id)
+                    executor.submit(_send_one_message, session, url, headers, number, campaign_id, template_id, foto)
                     for number in batch
                 ]
 
@@ -122,7 +141,7 @@ def sending_messages(num_list, campaign_id):
     time.sleep(6)
 
 
-def sending_messages_for_employee(num_list):
+def sending_messages_for_employee(num_list, campaign_id):
     url = "https://api.wazzup24.com/v3/message/"
 
     headers = {
@@ -135,11 +154,14 @@ def sending_messages_for_employee(num_list):
     max_workers = 10
     batch_size = 300
 
+    template_id ="a50be0b4-1eed-446a-bd54-5c29dc745f96"
+    foto = "https://em-go.kz/ala15.jpg"
+
     try:
         for batch in chunks(num_list, size=batch_size):
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [
-                    executor.submit(_send_one_message, session, url, headers, number)
+                    executor.submit(_send_one_message, session, url, headers, number, campaign_id, template_id, foto)
                     for number in batch
                 ]
 

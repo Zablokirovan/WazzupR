@@ -12,21 +12,21 @@ db_client = psycopg2.connect(
     port=os.getenv("DB_PORT")
 )
 
-def get_number_info():
-    query = """
-        SELECT ci.phone_num_clear
-        FROM "MessagingCore".contact_info ci
-        INNER JOIN "MessagingCore".contact_in_deal cid
-            ON cid.contact_id = ci.contact_id
-        LEFT JOIN "MessagingCore".messaging_results mr
-            ON mr.phone_num = ci.phone_num_clear
-        WHERE cid.date_create >= '2025-11-01'
-          AND cid.date_create < '2025-12-31'
-          AND ci.phone_num_clear IS NOT NULL
-          AND mr.messages_id IS NULL
-        GROUP BY ci.phone_num_clear
-        HAVING COUNT(DISTINCT ci.contact_id) = 1
-        LIMIT 4500;
+def get_number_info(city):
+    query_city = {'ALA':'АЛА',
+                  "SHMK": 'ШМК',
+                  "TRZ":"ТРЗ",
+                  "TKR":"ТКР",
+                  "USK":"УСК"}
+    city_upload = query_city.get(city)
+
+    query = f"""
+     select cfm.phone_num_clear 
+    from "MessagingCore".contact_for_messaging cfm 
+    where cfm.date_create <= '2025-07-30'
+      and cfm.department_short = '{city_upload}'
+    group by cfm.phone_num_clear 
+    limit 14000;
     """
     with db_client.cursor() as cur:
         cur.execute(query)

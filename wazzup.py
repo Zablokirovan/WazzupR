@@ -40,15 +40,13 @@ def _create_session():
     return session
 
 
-def _send_one_message(session, url, headers, number, campaign_id, template_id, foto):
+def _send_one_message(session, url, headers, number, campaign_id, template, photo):
     data = {
         "channelId": "aeeb7d9e-0631-4ef4-a294-82dee4178089",
         "chatId": f"{number}",
         "chatType": "whatsapp",
-        "templateId": f"{template_id}",
-        "templateValues": [
-            f"{foto}"
-        ]
+        "templateId": f"{template}",
+        "templateValues": [f"{photo}"]
     }
 
     try:
@@ -87,45 +85,50 @@ def _send_one_message(session, url, headers, number, campaign_id, template_id, f
         }
 
 
-def sending_messages(num_list, campaign_id, city ):
+def sending_messages(num_list, campaign_id, city):
     url = "https://api.wazzup24.com/v3/message/"
 
     headers = {
         "Authorization": f"Bearer {os.getenv('WAZZUP_TOKEN')}",
         "Content-Type": "application/json"
     }
-
-    numbers = [(+77752123690)]#[row[0] for row in num_list if row and row[0]]
+    numbers = [row[0] for row in num_list if row and row[0]]
 
     session = _create_session()
+    cities_template = {
+        'АЛА': {
+            'template': 'ed5e4683-70bd-4370-9021-91ba8e3f65e1',
+            'photo': 'https://em-go.kz/50.jpg'
+        },
+
+        'ТКР': {
+            'template': 'a368e8ee-5952-439e-9270-59c044645fb9',
+            'photo': 'https://em-go.kz/50.jpg'
+        },
+        'УСК': {
+            'template': '66376ae8-ea86-45cf-87e3-6b453a911d3e',
+            'photo': 'https://em-go.kz/50.jpg'
+        },
+        'ТРЗ': {
+            'template': '940b421c-92b2-4f12-9772-b55f2188c5cd',
+            'photo': 'https://em-go.kz/50.jpg'
+        },
+        'ШМК': {
+            'template': '6ee39c87-3cee-4d9c-8f3f-98777b85d085',
+            'photo': 'https://em-go.kz/50.jpg'
+        }
+    }
+    city_template = cities_template.get(city)
+    template = city_template['template']
+    photo = city_template['photo']
 
     max_workers = 10
     batch_size = 300
-    query_city = {
-        'ALA':{
-            "template_id":"435cc795-1f52-4d23-bd50-f613fe9e9a25",
-            "foto":"https://em-go.kz/ala15.jpg"},
-        "SHMK":{
-            "template_id":"d418f0b7-7ec3-466f-8c95-9f17da387400",
-            "foto":"https://em-go.kz/shmk15.jpg"},
-        "TRZ":{
-            "template_id":"f566a226-05bc-46e5-b5d6-2e6fa20991ee",
-            "foto":"https://em-go.kz/trz15.jpg"},
-        "TKR": {
-            "template_id":"84a806ec-7971-43ee-a279-9ad6bf814b55",
-            "foto":"https://em-go.kz/tkr15.jpg"},
-        "USK":{
-            "template_id":"bfc94ac6-be8c-492e-94d8-72cf405d599c",
-            "foto":"https://em-go.kz/usk15.jpg"}
-    }
-    info = query_city.get(city)
-    template_id = info["template_id"]
-    foto = info["foto"]
     try:
         for batch in chunks(numbers, size=batch_size):
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [
-                    executor.submit(_send_one_message, session, url, headers, number, campaign_id, template_id, foto)
+                    executor.submit(_send_one_message, session, url, headers, number, campaign_id, template, photo)
                     for number in batch
                 ]
 
@@ -153,15 +156,14 @@ def sending_messages_for_employee(num_list, campaign_id):
 
     max_workers = 10
     batch_size = 300
-
-    template_id ="a50be0b4-1eed-446a-bd54-5c29dc745f96"
-    foto = "https://em-go.kz/ala15.jpg"
+    template = 'ed5e4683-70bd-4370-9021-91ba8e3f65e1'
+    photo = 'https://em-go.kz/11.jpg'
 
     try:
         for batch in chunks(num_list, size=batch_size):
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [
-                    executor.submit(_send_one_message, session, url, headers, number, campaign_id, template_id, foto)
+                    executor.submit(_send_one_message, session, url, headers, number, campaign_id, template, photo)
                     for number in batch
                 ]
 

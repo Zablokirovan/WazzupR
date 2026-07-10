@@ -2,7 +2,7 @@ import db_data
 import wazzup
 import pandas as pd
 
-cityes = ['ALA', 'TKR', 'USK', 'TRZ','SHMK']
+cityes = ['АЛА', 'ТКР', 'УСК', 'ТРЗ', 'ШМК']
 
 def main(cityes):
 
@@ -15,16 +15,20 @@ def main(cityes):
     campaign_id = db_data.create_campaign(campaign_name, source, notes)
     print(f"Кампания создана, campaign_id = {campaign_id}")
 
+
+
+    #TODO: ПОСЛЕ РАССЫЛКИ 17 ЧИСЛА ЭТОТ БЛОК ЗАКОМЕНТИРОВАНТЬ, ПЕРЕД КАЖДОЙ СТРОКОЙ КОДА ПОСТАВИТЬ # ДАННЫЕ СТРОКИ ОТПРАВЛЯЮТ СООБЩЕНИЕ КЛИЕНТУ
+    # ========================================================================
     df = pd.read_csv('employee_phone.csv')
     phones = df["number"].tolist()
     wazzup.sending_messages_for_employee(phones, campaign_id)
+    print("Сотрудники получили уведомление")
+    # ========================================================================
 
-    # Получаем номера и запускаем рассылку
     for city in cityes:
-        num_list = db_data.get_number_info(city)
-        print(f"Номеров для рассылки: {len(num_list)}")
+        num_list = db_data.get_all_number_info(city)
+        print(city, len(num_list))
         wazzup.sending_messages(num_list, campaign_id, city)
-
 
 
 if __name__ == "__main__":

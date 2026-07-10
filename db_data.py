@@ -13,24 +13,65 @@ db_client = psycopg2.connect(
 )
 
 def get_number_info(city):
-    query_city = {'ALA':'АЛА',
-                  "SHMK": 'ШМК',
-                  "TRZ":"ТРЗ",
-                  "TKR":"ТКР",
-                  "USK":"УСК"}
-    city_upload = query_city.get(city)
+    """Номера из Bitrix (contact_for_messaging). city - кириллический код (АЛА, ТКР, УСК, ТРЗ, ШМК)"""
 
-    query = f"""
-     select cfm.phone_num_clear 
-    from "MessagingCore".contact_for_messaging cfm 
-    where cfm.date_create <= '2025-07-30'
-      and cfm.department_short = '{city_upload}'
-    group by cfm.phone_num_clear 
-    limit 14000;
+    query = """
+      SELECT DISTINCT ON (cfm.phone_num_clear)
+        cfm.phone_num_clear,
+        cfm.department_short
+    FROM "MessagingCore".contact_for_messaging cfm
+    WHERE cfm.date_create >= '2026-01-01' and cfm.department_short like %s
+    ORDER BY
+        cfm.phone_num_clear,
+        cfm.date_create DESC;
     """
     with db_client.cursor() as cur:
-        cur.execute(query)
+        cur.execute(query, (f"{city}%",))
         return cur.fetchall()
+
+
+def get_1c_number_info(city):
+    """Номера из 1С (1cnumber), которых ещё нет в contact_info. city - кириллический код"""
+
+    query = """
+      SELECT
+          CASE
+              WHEN LEFT(c."НомерТелефона", 1) = '8'
+              THEN '7' || SUBSTRING(c."НомерТелефона" FROM 2)
+              ELSE c."НомерТелефона"
+          END AS phone_with_7,
+          c."Организация"
+      FROM "MessagingCore"."1cnumber" c
+      LEFT JOIN "MessagingCore".contact_info cfm
+          ON RIGHT(cfm.phone_num_clear, 10) = RIGHT(c."НомерТелефона", 10)
+      WHERE cfm.phone_num_clear IS NULL
+        AND c."НомерТелефона" IS NOT NULL
+        AND TRIM(c."НомерТелефона") <> ''
+        AND c."Организация" like %s
+      ORDER BY
+          c."НомерТелефона" DESC;
+    """
+    with db_client.cursor() as cur:
+        cur.execute(query, (f"{city}%",))
+        return cur.fetchall()
+
+
+def get_all_number_info(city):
+    """Объединяет номера из Bitrix и 1С для города, убирая дубликаты по номеру"""
+
+    bitrix_numbers = get_number_info(city)
+    onec_numbers = get_1c_number_info(city)
+
+    seen = set()
+    merged = []
+    for phone, label in bitrix_numbers + onec_numbers:
+        key = phone[-10:] if phone else phone
+        if key in seen:
+            continue
+        seen.add(key)
+        merged.append((phone, label))
+
+    return merged
 
 
 def create_campaign(name, source, notes=None):
@@ -75,15 +116,5 @@ def insert_data_for_messages(campaign_id, info_mess, resp_code, number):
                 status        = EXCLUDED.status,
                 error         = EXCLUDED.error
         """, (campaign_id, messages_id, phone_num, resp_code, None, error))
-
-        if resp_code == 201:
-            cur.execute("""
-                INSERT INTO n8n.sender_map (sender_id, chanel_id, chanel_type)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (sender_id)
-                DO UPDATE SET
-                    chanel_id   = EXCLUDED.chanel_id,
-                    chanel_type = EXCLUDED.chanel_type
-            """, (info_mess.get("chatId"), 'kaspi_WAZZUP', 'whatsapp'))
 
     db_client.commit()
